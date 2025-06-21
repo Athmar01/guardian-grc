@@ -1,0 +1,9 @@
+import { clerkMiddleware } from '@clerk/nextjs/server';
+
+// This is the simplest form of middleware that protects all routes by default.
+// Public routes can be added as needed.
+export default clerkMiddleware();
+
+export const config = {
+  matcher: ['/((?!.*\\..*|_next).*)', '/', '/(api|trpc)(.*)'],
+};

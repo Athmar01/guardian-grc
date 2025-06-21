@@ -1,0 +1,241 @@
+/* Import Inter font - Linear's primary typeface */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* Import our Linear-inspired design system */
+@import '../styles/linear-design-system.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Modern Professional Color System - Light Mode */
+    --background: 210 40% 98%; /* #f8fafc - Subtle blue-tinted background */
+    --foreground: 222 47% 11%; /* #0f172a - Rich deep blue-black */
+
+    /* Card and Surface Colors */
+    --card: 0 0% 100%; /* #ffffff - Pure white cards */
+    --card-foreground: 222 47% 11%; /* #0f172a - Rich text on cards */
+    --popover: 0 0% 100%; /* #ffffff - White popovers */
+    --popover-foreground: 222 47% 11%; /* #0f172a - Deep blue text */
+    
+    /* Primary - Deep Navy */
+    --primary: 213 75% 24%; /* #1a365d - Deep navy for trust and stability */
+    --primary-lighter: 213 51% 45%; /* #3374b5 - Lighter navy for hover states */
+    --primary-darker: 213 80% 19%; /* #15294a - Darker navy for active states */
+    --primary-foreground: 0 0% 100%; /* #ffffff - White text on primary */
+
+    /* Secondary - Warm Coral */
+    --secondary: 0 100% 70%; /* #ff6b6b - Warm coral for secondary elements */
+    --secondary-foreground: 0 0% 100%; /* #ffffff - White text on secondary */
+    
+    /* Accent - Amber for Risk Indicators */
+    --accent: 35 92% 50%; /* #f59e0b - Amber for accent and risk indicators */
+    --accent-foreground: 0 0% 100%; /* #ffffff - White text on accent */
+    
+    /* Semantic Status Colors */
+    --success: 160 84% 39%; /* #10b981 - Emerald green for success */
+    --success-foreground: 0 0% 100%; /* #ffffff - White on success */
+    
+    --warning: 35 92% 50%; /* #f59e0b - Amber for warnings */
+    --warning-foreground: 0 0% 100%; /* #ffffff - White on warning */
+    
+    --destructive: 0 84% 60%; /* #ef4444 - Modern red for errors/danger */
+    --destructive-foreground: 0 0% 100%; /* #ffffff - White on destructive */
+    
+    /* Neutral Interface Colors */
+    --muted: 210 40% 96%; /* #f1f5f9 - Subtle blue-gray for muted areas */
+    --muted-foreground: 215 16% 47%; /* #64748b - Muted text */
+    
+    --border: 214 32% 91%; /* #e2e8f0 - Subtle borders */
+    --input: 214 32% 91%; /* #e2e8f0 - Input borders */
+    --ring: 213 75% 24%; /* #1a365d - Focus rings using primary color */
+    
+    /* Border Radiuses */
+    --radius-sm: 0.25rem;
+    --radius: 0.5rem;
+    --radius-md: 0.75rem;
+    --radius-lg: 1rem;
+    --radius-xl: 1.5rem;
+    
+    /* Shadow Tokens */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    
+    /* Typography */
+    --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-display: 'Poppins', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  /* Dark Mode */
+  .dark {
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
+
+    --card: 222 47% 14%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222 47% 14%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 213 51% 45%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 0 54% 65%;
+    --secondary-foreground: 0 0% 100%;
+
+    --accent: 34 100% 50%;
+    --accent-foreground: 0 0% 100%;
+
+    --muted: 222 47% 14%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --destructive: 0 62.8% 60.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --success: 142 71% 45%;
+    --success-foreground: 210 40% 98%;
+
+    --warning: 35 92% 50%;
+    --warning-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+  }
+}
+
+/* Component-level styling */
+@layer components {
+  /* Card styling */
+  .grc-card {
+    @apply bg-white rounded-lg border border-gray-200 shadow-md p-6 transition-all duration-200;
+  }
+  
+  .grc-card-hover {
+    @apply hover:shadow-lg hover:border-gray-300 hover:translate-y-[-2px];
+  }
+  
+  /* Button styling */
+  .grc-btn {
+    @apply inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors
+    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
+    disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2;
+  }
+  
+  .grc-btn-primary {
+    @apply bg-primary text-primary-foreground hover:bg-primary-darker;
+  }
+  
+  .grc-btn-secondary {
+    @apply bg-secondary text-secondary-foreground hover:bg-secondary/90;
+  }
+  
+  .grc-btn-outline {
+    @apply border border-input bg-background hover:bg-accent hover:text-accent-foreground;
+  }
+  
+  /* Risk level badges */
+  .grc-badge {
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors
+    focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2;
+  }
+  
+  .grc-badge-critical {
+    @apply bg-risk-critical text-white;
+  }
+  
+  .grc-badge-high {
+    @apply bg-risk-high text-white;
+  }
+  
+  .grc-badge-medium {
+    @apply bg-risk-medium text-white;
+  }
+  
+  .grc-badge-low {
+    @apply bg-risk-low text-white;
+  }
+  
+  /* Form elements */
+  .grc-input {
+    @apply flex h-10 w-full rounded-md border border-input bg-background px-3 py-2
+    text-sm ring-offset-background file:border-0 file:bg-transparent
+    file:text-sm file:font-medium placeholder:text-muted-foreground
+    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
+    disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  
+  .grc-select {
+    @apply flex h-10 w-full rounded-md border border-input bg-background px-3 py-2
+    text-sm ring-offset-background file:border-0 file:bg-transparent
+    file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-2
+    focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  
+  /* Typography styles */
+  .grc-h1 {
+    @apply scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl;
+  }
+  
+  .grc-h2 {
+    @apply scroll-m-20 text-3xl font-semibold tracking-tight;
+  }
+  
+  .grc-h3 {
+    @apply scroll-m-20 text-2xl font-semibold tracking-tight;
+  }
+  
+  .grc-h4 {
+    @apply scroll-m-20 text-xl font-semibold tracking-tight;
+  }
+  
+  .grc-p {
+    @apply leading-7 [&:not(:first-child)]:mt-6;
+  }
+}
+
+/* Utility classes */
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .grc-shadow-card {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  }
+
+  .grc-shadow-card-hover {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+  }
+  
+  .grc-gradient-hero {
+    background: linear-gradient(135deg, #1a365d 0%, #243b53 100%);
+  }
+  
+  .grc-glass {
+    backdrop-filter: blur(8px);
+    background-color: rgba(255, 255, 255, 0.6);
+  }
+  
+  .grc-glass-dark {
+    backdrop-filter: blur(8px);
+    background-color: rgba(15, 23, 42, 0.6);
+  }
+}
+
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-sans);
+  }
+}

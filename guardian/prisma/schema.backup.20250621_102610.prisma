@@ -1,0 +1,592 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  extensions = [uuid_ossp(map: "uuid-ossp")]
+}
+
+// Enums
+enum UserRole {
+  ADMIN
+  AUDITOR
+  COMPLIANCE_OFFICER
+  RISK_MANAGER
+  USER
+}
+
+enum ControlStatus {
+  DRAFT
+  IN_REVIEW
+  APPROVED
+  IMPLEMENTED
+  DEPRECATED
+}
+
+enum RiskLevel {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+  UNKNOWN
+}
+
+enum RiskStatus {
+  IDENTIFIED
+  ANALYZING
+  EVALUATED
+  TREATING
+  MONITORING
+  CLOSED
+}
+
+enum TreatmentStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  REJECTED
+}
+
+enum TreatmentType {
+  MITIGATE
+  ACCEPT
+  TRANSFER
+  AVOID
+}
+
+enum AssessmentStatus {
+  DRAFT
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  PUBLISHED
+  ARCHIVED
+}
+
+enum ComplianceStatus {
+  COMPLIANT
+  NON_COMPLIANT
+  PARTIALLY_COMPLIANT
+  NOT_APPLICABLE
+  NOT_ASSESSED
+}
+
+enum DocumentType {
+  POLICY
+  PROCEDURE
+  TEMPLATE
+  GUIDELINE
+  STANDARD
+  OTHER
+}
+
+enum DocumentStatus {
+  DRAFT
+  UNDER_REVIEW
+  APPROVED
+  ARCHIVED
+}
+
+enum ContractStatus {
+  DRAFT
+  ACTIVE
+  EXPIRED
+  TERMINATED
+  RENEWAL_PENDING
+}
+
+enum EvidenceType {
+  DOCUMENT
+  SCREENSHOT
+  CONFIGURATION
+  LOG
+  OTHER
+}
+
+// Models
+model Account {
+  id                 String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model User {
+  id                  String                @id @default(uuid())
+  email               String                @unique
+  name                String?
+  role                UserRole              @default(USER)
+  password            String?
+  emailVerified       DateTime?
+  image               String?
+  organization        Organization?         @relation(fields: [organizationId], references: [id])
+  organizationId      String?
+  sessions            Session[]
+  accounts            Account[]
+  createdControls     Control[]             @relation("CreatedBy")
+  updatedControls     Control[]             @relation("UpdatedBy")
+  // Framework Relations
+  createdFrameworks   Framework[]           @relation("FrameworkCreatedBy")
+  updatedFrameworks   Framework[]           @relation("FrameworkUpdatedBy")
+  
+  // Risk Management Relations
+  createdRisks        Risk[]                @relation("RiskCreatedBy")
+  ownedRisks          Risk[]                @relation("RiskOwner")
+  riskAssessments     RiskAssessment[]       @relation("RiskAssessedBy")
+  createdMatrices     RiskMatrix[]          @relation("MatrixCreatedBy")
+  updatedMatrices     RiskMatrix[]          @relation("MatrixUpdatedBy")
+  assignedTreatments  RiskTreatment[]       @relation("TreatmentAssignedTo")
+  createdAssessments  Assessment[]          @relation("AssessmentCreatedBy")
+  updatedAssessments  Assessment[]          @relation("AssessmentUpdatedBy")
+  createdDocuments    Document[]            @relation("DocumentCreatedBy")
+  updatedDocuments    Document[]            @relation("DocumentUpdatedBy")
+  uploadedEvidences   Evidence[]            @relation("EvidenceUploadedBy")
+  createdMappings     ControlMapping[]      @relation("CreatedControlMappings")
+  frameworkMappings   FrameworkMapping[]    @relation("CreatedFrameworkMappings")
+  uploadedAttachments Attachment[]         @relation("UploadedAttachments")
+  vendorAssessments   VendorRiskAssessment[] @relation("VendorAssessments")
+  createdTreatments   RiskTreatment[]       @relation("TreatmentCreatedBy")
+  updatedTreatments   RiskTreatment[]       @relation("TreatmentUpdatedBy")
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+
+  @@index([email])
+  @@index([organizationId])
+}
+
+model Organization {
+  id           String     @id @default(uuid())
+  name         String
+  description  String?
+  settings     Json       @default("{}")
+  users        User[]
+  frameworks     Framework[]
+  risks          Risk[]
+  riskMatrices   RiskMatrix[]
+  riskTreatments RiskTreatment[]
+  riskAssessments RiskAssessment[]
+  documents      Document[]
+  assessments    Assessment[]
+  vendors        Vendor[]
+  evidences      Evidence[]
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model Framework {
+  id               String             @id @default(uuid())
+  name             String
+  version          String
+  urn              String             @unique
+  description      String?
+  isCustom         Boolean            @default(false)
+  organization     Organization?      @relation(fields: [organizationId], references: [id])
+  organizationId   String?
+  controls         Control[]
+  sourceMappings   FrameworkMapping[] @relation("SourceFramework")
+  targetMappings   FrameworkMapping[] @relation("TargetFramework")
+  assessments      Assessment[]
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  createdBy        User?              @relation("FrameworkCreatedBy", fields: [createdById], references: [id])
+  createdById      String?
+  updatedBy        User?              @relation("FrameworkUpdatedBy", fields: [updatedById], references: [id])
+  updatedById      String?
+
+  @@index([organizationId])
+}
+
+model Control {
+  id            String            @id @default(uuid())
+  framework     Framework         @relation(fields: [frameworkId], references: [id])
+  frameworkId   String
+  identifier    String
+  name          String
+  description   String?
+  category      String?
+  status        ControlStatus     @default(DRAFT)
+  sourceMappings ControlMapping[]  @relation("SourceControl")
+  targetMappings ControlMapping[]  @relation("TargetControl")
+  assessments   AssessmentItem[]
+  evidences     Evidence[]
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  createdBy     User              @relation("CreatedBy", fields: [createdById], references: [id])
+  createdById   String
+  updatedBy     User              @relation("UpdatedBy", fields: [updatedById], references: [id])
+  updatedById   String
+  risks         Risk[]
+
+  @@index([frameworkId])
+  @@index([identifier])
+  @@index([createdById])
+  @@index([updatedById])
+}
+
+model ControlMapping {
+  id                String   @id @default(uuid())
+  sourceControl     Control  @relation("SourceControl", fields: [sourceControlId], references: [id])
+  sourceControlId   String
+  targetControl     Control  @relation("TargetControl", fields: [targetControlId], references: [id])
+  targetControlId   String
+  confidence        Float?   @default(1.0)
+  notes             String?
+  createdBy         User     @relation("CreatedControlMappings", fields: [createdById], references: [id])
+  createdById       String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([sourceControlId, targetControlId])
+  @@index([sourceControlId])
+  @@index([targetControlId])
+  @@index([createdById])
+}
+
+model FrameworkMapping {
+  id          String   @id @default(uuid())
+  source      Framework @relation("SourceFramework", fields: [sourceId], references: [id])
+  sourceId    String
+  target      Framework @relation("TargetFramework", fields: [targetId], references: [id])
+  targetId    String
+  confidence  Float?
+  mappedBy    User     @relation("CreatedFrameworkMappings", fields: [mappedById], references: [id])
+  mappedById  String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([sourceId, targetId])
+  @@index([sourceId])
+  @@index([targetId])
+  @@index([mappedById])
+}
+
+model Risk {
+  id              String            @id @default(uuid())
+  title           String
+  description     String            @db.Text
+  category        String
+  impact          Int               // 1-5 scale
+  likelihood      Int               // 1-5 scale
+  inherentRisk    Int               // Calculated field (impact * likelihood)
+  residualRisk    Int?              // Risk after treatments
+  riskLevel       RiskLevel         @default(UNKNOWN)
+  status          RiskStatus        @default(IDENTIFIED)
+  nextReviewDate  DateTime?         @db.Date
+  owner           User?             @relation("RiskOwner", fields: [ownerId], references: [id])
+  ownerId         String?
+  createdBy       User              @relation("RiskCreatedBy", fields: [createdById], references: [id])
+  createdById     String
+  updatedBy       User?             @relation("RiskUpdatedBy", fields: [updatedById], references: [id])
+  updatedById     String?
+  organization    Organization      @relation(fields: [organizationId], references: [id])
+  organizationId  String
+  controls        Control[]
+  treatments      RiskTreatment[]
+  assessments     RiskAssessment[]
+  riskMatrixId    String?
+  riskMatrix      RiskMatrix?       @relation(fields: [riskMatrixId], references: [id])
+  tags            String[]
+  dueDate         DateTime?
+  nextReviewDate  DateTime?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  deletedAt       DateTime?         @map("deleted_at")
+  isArchived      Boolean           @default(false)
+  metadata        Json?             // For additional custom fields
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([ownerId])
+  @@index([createdById])
+  @@index([organizationId])
+  @@index([riskLevel])
+  @@index([status])
+}
+
+model RiskAssessment {
+  id                String          @id @default(uuid())
+  risk              Risk            @relation(fields: [riskId], references: [id])
+  riskId            String
+  assessmentDate     DateTime        @default(now())
+  assessedBy        User            @relation("RiskAssessedBy", fields: [assessedById], references: [id])
+  assessedById      String
+  impact            Int             // 1-5 scale
+  likelihood        Int             // 1-5 scale
+  riskScore         Int             // impact * likelihood
+  notes             String?         @db.Text
+  organization      Organization    @relation(fields: [organizationId], references: [id])
+  organizationId    String
+  nextReviewDate    DateTime?
+  isCurrent         Boolean         @default(true)
+  previousVersionId String?         // For versioning assessments
+  metadata          Json?           // For additional custom fields
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@index([riskId])
+  @@index([assessedById])
+  @@index([organizationId])
+  @@index([assessmentDate])
+}
+
+model RiskMatrix {
+  id               String          @id @default(uuid())
+  name             String
+  description      String?         @db.Text
+  organization     Organization    @relation(fields: [organizationId], references: [id])
+  organizationId   String
+  isDefault        Boolean         @default(false)
+  config           Json            // Stores matrix configuration (impact/likelihood definitions, colors, etc.)
+  risks            Risk[]
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  createdBy        User?           @relation("MatrixCreatedBy", fields: [createdById], references: [id])
+  createdById      String?
+  updatedBy        User?           @relation("MatrixUpdatedBy", fields: [updatedById], references: [id])
+  updatedById      String?
+
+  @@index([organizationId])
+  @@unique([organizationId, name])
+}
+
+model RiskTreatment {
+  id            String        @id @default(uuid())
+  risk          Risk          @relation(fields: [riskId], references: [id])
+  riskId        String
+  type          TreatmentType
+  title         String
+  description   String
+  status        TreatmentStatus @default(PLANNED)
+  assignedTo    User?          @relation("TreatmentAssignedTo", fields: [assignedToId], references: [id])
+  assignedToId  String?
+  dueDate       DateTime?      @db.Date
+  completedDate DateTime?      @db.Date
+  effectiveness Int?           // 1-5 scale for treatment effectiveness
+  notes         String?        @db.Text
+  metadata      Json?          @default("{}")
+  organization  Organization   @relation(fields: [organizationId], references: [id])
+  organizationId String
+  createdBy     User           @relation("TreatmentCreatedBy", fields: [createdById], references: [id])
+  createdById   String
+  updatedBy     User           @relation("TreatmentUpdatedBy", fields: [updatedById], references: [id])
+  updatedById   String
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  deletedAt     DateTime?     @map("deleted_at")
+
+  @@map("risk_treatments")
+}
+
+model Assessment {
+  id           String            @id @default(uuid())
+  name         String
+  description  String?
+  framework    Framework         @relation(fields: [frameworkId], references: [id])
+  frameworkId  String
+  status       AssessmentStatus  @default(DRAFT)
+  startDate    DateTime?
+  endDate      DateTime?
+  items        AssessmentItem[]
+  createdBy    User              @relation("AssessmentCreatedBy", fields: [createdById], references: [id])
+  createdById  String
+  updatedBy    User              @relation("AssessmentUpdatedBy", fields: [updatedById], references: [id])
+  updatedById  String
+  organization Organization      @relation(fields: [organizationId], references: [id])
+  organizationId String
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  @@index([frameworkId])
+  @@index([status])
+  @@index([createdById])
+  @@index([updatedById])
+  @@index([organizationId])
+}
+
+model AssessmentItem {
+  id            String     @id @default(uuid())
+  assessment    Assessment @relation(fields: [assessmentId], references: [id])
+  assessmentId  String
+  control       Control    @relation(fields: [controlId], references: [id])
+  controlId     String
+  status        ComplianceStatus @default(NOT_ASSESSED)
+  notes         String?
+  evidences     Evidence[]
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  @@unique([assessmentId, controlId])
+  @@index([assessmentId])
+  @@index([controlId])
+  @@index([status])
+}
+
+model Evidence {
+  id               String         @id @default(uuid())
+  name             String
+  description      String?
+  url              String
+  type             EvidenceType
+  assessmentItem   AssessmentItem? @relation(fields: [assessmentItemId], references: [id])
+  assessmentItemId String?
+  control          Control?       @relation(fields: [controlId], references: [id])
+  controlId        String?
+  uploadedBy       User           @relation("EvidenceUploadedBy", fields: [uploadedById], references: [id])
+  uploadedById     String
+  organization     Organization   @relation(fields: [organizationId], references: [id])
+  organizationId   String
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@index([assessmentItemId])
+  @@index([controlId])
+  @@index([uploadedById])
+  @@index([type])
+  @@index([organizationId])
+}
+
+model Vendor {
+  id              String    @id @default(uuid())
+  name            String
+  description     String?
+  website         String?
+  contactEmail    String?
+  contactPhone    String?
+  riskAssessment  VendorRiskAssessment?
+  contracts       Contract[]
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  organizationId String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([name])
+  @@index([contactEmail])
+  @@index([organizationId])
+}
+
+model VendorRiskAssessment {
+  id           String    @id @default(uuid())
+  vendor       Vendor    @relation(fields: [vendorId], references: [id])
+  vendorId     String    @unique
+  overallRisk  RiskLevel @default(UNKNOWN)
+  assessment   Json      // Detailed assessment data
+  assessedBy   User      @relation("VendorAssessments", fields: [assessedById], references: [id])
+  assessedById String
+  assessedAt   DateTime  @default(now())
+  nextReview   DateTime
+  status       AssessmentStatus @default(DRAFT)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([vendorId])
+  @@index([assessedById])
+  @@index([status])
+  @@index([nextReview])
+}
+
+model Contract {
+  id           String    @id @default(uuid())
+  vendor       Vendor    @relation(fields: [vendorId], references: [id])
+  vendorId     String
+  name         String
+  description  String?
+  startDate    DateTime
+  endDate      DateTime
+  value        Float?
+  currency     String   @default("USD")
+  documentUrl  String?
+  status       ContractStatus @default(DRAFT)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([vendorId])
+  @@index([status])
+  @@index([startDate])
+  @@index([endDate])
+}
+
+model Document {
+  id             String       @id @default(uuid())
+  title          String
+  description    String?
+  content        String?      @db.Text
+  type           DocumentType
+  status         DocumentStatus @default(DRAFT)
+  category       String?
+  tags           String[]     // For categorization
+  version        Int          @default(1)
+  parent         Document?    @relation("DocumentVersions", fields: [parentId], references: [id])
+  parentId       String?
+  versions       Document[]   @relation("DocumentVersions")
+  createdBy      User         @relation("DocumentCreatedBy", fields: [createdById], references: [id])
+  createdById    String
+  updatedBy      User         @relation("DocumentUpdatedBy", fields: [updatedById], references: [id])
+  updatedById    String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  organizationId String
+  attachments    Attachment[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([parentId])
+  @@index([createdById])
+  @@index([updatedById])
+  @@index([organizationId])
+  @@index([type])
+  @@index([status])
+  @@index([category])
+  // Fulltext search is not currently supported by the PostgreSQL connector
+  // Consider using a dedicated search service like Elasticsearch or PostgreSQL's built-in full-text search
+  // @@fulltext([title, description, content])
+}
+
+model Attachment {
+  id           String    @id @default(uuid())
+  name         String
+  url          String
+  type         String
+  size         Int
+  document     Document  @relation(fields: [documentId], references: [id])
+  documentId   String
+  uploadedBy   User      @relation("UploadedAttachments", fields: [uploadedById], references: [id])
+  uploadedById String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([documentId])
+  @@index([uploadedById])
+}
