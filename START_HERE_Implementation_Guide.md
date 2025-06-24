@@ -1,10 +1,22 @@
 # Immediate Implementation Guide - Start NOW
 
+## Prerequisites
+
+- Node.js 18+ and npm
+- Git command-line tools
+
+### Step 0: Clone and install dependencies
+```bash
+git clone https://github.com/Athmar01/guardian-grc.git
+cd guardian-grc/guardian
+npm install
+```
+
 ## Day 1: Database Setup (Today)
 
 ### Step 1: Install PostgreSQL
 ```bash
-cd /Users/xapath/Desktop/GRC Apps/GRC apps/guardian-grc-main/guardian
+# Adjust commands for your operating system
 
 # Install PostgreSQL
 brew install postgresql@15
@@ -52,6 +64,11 @@ npx prisma generate
 
 # Open Prisma Studio to verify
 npx prisma studio
+```
+
+### Step 6: Start the development server
+```bash
+npm run dev
 ```
 
 ## Day 2: Create Core Infrastructure
@@ -243,8 +260,10 @@ npx prisma generate --generator erd
 ## START NOW!
 
 1. Open terminal
-2. Navigate to project: `cd /Users/xapath/Desktop/GRC Apps/GRC apps/guardian-grc-main/guardian`
-3. Run: `brew install postgresql@15`
-4. Follow Day 1 steps above
+2. Navigate to project folder:
+   ```bash
+   cd guardian-grc/guardian
+   ```
+3. Install PostgreSQL and follow Day 1 steps
 
 The clock is ticking - 8 weeks to transform this platform!
